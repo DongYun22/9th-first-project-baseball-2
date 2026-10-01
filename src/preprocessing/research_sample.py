@@ -1,11 +1,12 @@
 """Restrict the raw Statcast pitches to the team's shared research sample.
 
 The team analyses one fixed sample: the pitches in the `statcast_<year>_min*_research.csv`
-files (pitcher-seasons with >= 500 pitches, 2026 >= 300). Those CSVs have no score or
-catcher columns, so the analysis still loads `data/raw` and keeps only the rows whose key
-`(game_pk, at_bat_number, pitch_number, pitcher)` appears in the CSVs. `pitch_type` is taken
-from the CSV so a later Statcast reclassification in `data/raw` cannot make our sample differ
-from the teammates' one. Every other shared column is identical in both sources.
+files (pitcher-seasons with >= 500 pitches, 2026 >= 300). Those CSVs have no catcher column
+(score columns were added 2026-10-01), so the analysis still loads `data/raw` and keeps only
+the rows whose key `(game_pk, at_bat_number, pitch_number, pitcher)` appears in the CSVs.
+`pitch_type` is taken from the CSV so a later Statcast reclassification in `data/raw` cannot
+make our sample differ from the teammates' one. Every other shared column is identical in
+both sources.
 
 Put the CSVs in `data/research/` (git-ignored) or point `RESEARCH_SAMPLE_DIR` at them. Only
 the key columns and `pitch_type` are read; they are cached in `data/processed/` and re-read
