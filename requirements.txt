@@ -8,3 +8,4 @@ rpy2
 matplotlib
 ipykernel
 nbconvert
+scikit-learn
