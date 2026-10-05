@@ -88,6 +88,26 @@ def extract_pitcher_variance_components() -> tuple[float | None, float, float]:
     return intercept_var, group_var, corr
 
 
+def extract_variance_components(grouping: str = "pitcher") -> dict[str, float | None]:
+    """Generic (1 | grouping) random-intercept variance plus residual
+    variance, for a model fit by either fit_glmer or fit_lmer. Returns
+    {f"{grouping}_intercept": ..., "residual": ...}; "residual" is None for
+    a binomial glmer fit (VarCorr has no Residual row for those), and
+    present for a gaussian lmer fit.
+    """
+    vc = ro.r("as.data.frame(VarCorr(model))")
+    with R_CONVERTER.context():
+        vc_df = ro.conversion.get_conversion().rpy2py(vc)
+    intercept_rows = vc_df.loc[
+        (vc_df["grp"] == grouping) & (vc_df["var1"] == "(Intercept)") & vc_df["var2"].isna(), "vcov"
+    ]
+    residual_rows = vc_df.loc[vc_df["grp"] == "Residual", "vcov"]
+    return {
+        f"{grouping}_intercept": float(intercept_rows.iloc[0]) if len(intercept_rows) else None,
+        "residual": float(residual_rows.iloc[0]) if len(residual_rows) else None,
+    }
+
+
 def extract_random_effects_table() -> pd.DataFrame:
     pitcher_ranef = ro.r("as.data.frame(ranef(model)$pitcher)")
     with R_CONVERTER.context():

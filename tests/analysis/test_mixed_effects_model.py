@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,6 +11,7 @@ from src.analysis.mixed_effects_model import (
     compare_random_effects,
     compute_calibration_table,
     compute_icc,
+    compute_icc_gaussian,
     rank_pitchers_by_group_slope,
 )
 
@@ -100,3 +103,11 @@ def test_compute_calibration_table_separates_low_and_high_bins():
     assert len(table) == 10
     assert table["n"].sum() == 100
     assert table.iloc[0]["mean_observed"] < table.iloc[-1]["mean_observed"]
+
+
+def test_compute_icc_gaussian_matches_known_ratio():
+    assert math.isclose(compute_icc_gaussian(intercept_var=2.0, residual_var=6.0), 0.25)
+
+
+def test_compute_icc_gaussian_zero_intercept_is_zero():
+    assert compute_icc_gaussian(intercept_var=0.0, residual_var=4.0) == 0.0

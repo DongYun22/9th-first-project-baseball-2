@@ -101,6 +101,14 @@ def compute_icc(pitcher_intercept_variance: float) -> float:
     return pitcher_intercept_variance / (pitcher_intercept_variance + (math.pi**2) / 3)
 
 
+def compute_icc_gaussian(intercept_var: float, residual_var: float) -> float:
+    """Intraclass correlation for a gaussian (lmer) random-intercept model:
+    intercept variance over intercept + residual variance, vs. compute_icc's
+    logistic-link pi^2/3 formula.
+    """
+    return intercept_var / (intercept_var + residual_var)
+
+
 def rank_pitchers_by_group_slope(
     random_effects: pd.DataFrame, pitcher_meta: pd.DataFrame, n: int = 10
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
