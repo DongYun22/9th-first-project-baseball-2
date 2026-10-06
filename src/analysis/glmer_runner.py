@@ -147,6 +147,24 @@ def extract_lmer_fixed_effects() -> pd.DataFrame:
     return df
 
 
+def extract_fixed_effects_vcov() -> pd.DataFrame:
+    """Variance-covariance matrix of the current model's fixed effects,
+    labelled by term on both axes.
+    """
+    terms = list(ro.r("names(fixef(model))"))
+    with R_CONVERTER.context():
+        matrix = np.asarray(ro.conversion.get_conversion().rpy2py(ro.r("as.matrix(vcov(model))")))
+    return pd.DataFrame(matrix, index=terms, columns=terms)
+
+
+def extract_design_means() -> pd.Series:
+    """Column means of the current model's fixed-effects design matrix."""
+    terms = list(ro.r("names(fixef(model))"))
+    with R_CONVERTER.context():
+        means = np.asarray(ro.conversion.get_conversion().rpy2py(ro.r("colMeans(model.matrix(model))")))
+    return pd.Series(means, index=terms)
+
+
 def extract_ranef_table(grouping: str = "pitcher") -> pd.DataFrame:
     """Per-group random effects of the current model; columns are named
     `re_<term>` (intercept -> re_intercept).
