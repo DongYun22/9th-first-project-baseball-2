@@ -12,6 +12,11 @@ data/raw/*
 !data/raw/README.md
 !data/raw/sample_data.csv
 
+# team research sample CSVs (large; get them from the shared drive)
+data/research/*
+!data/research/.gitkeep
+!data/research/README.md
+
 # processed data
 data/processed/*
 !data/processed/.gitkeep

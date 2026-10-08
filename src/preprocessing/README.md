@@ -11,3 +11,7 @@
 * `clean_data.py`: 사용하지 않는 칼럼 제거 및 투구 결과(description) 결측치 처리 로직
 * `feature_engineering.py`: 기존 지표를 바탕으로 볼 배합 패턴 등 새로운 파생 변수를 생성하는 로직
 * `sequence_padder.py`: 모델 입력용 데이터의 시퀀스 길이를 맞추기 위한 마스킹(Masking) 및 패딩(Padding) 처리 모듈
+
+## 📌 현재 구현된 로딩 모듈
+* `load_raw_pitches.py`: `data/raw`의 월별 parquet을 모두 합치는 로더 (`load_all_pitches`)
+* `research_sample.py`: 위 결과에서 팀 공유 research CSV(`data/research/`)에 있는 투구만 남기는 로더 (`load_research_pitches`). 분석·파이프라인 스크립트는 모두 이 로더를 씁니다. 자세한 정의는 [data/research/README.md](../../data/research/README.md)
