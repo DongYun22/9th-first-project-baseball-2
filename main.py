@@ -1,7 +1,7 @@
 """Final-report pipeline: reproduces the numbers in docs/최종정리.md.
 
-    python main.py            # full run (about 1.5-2 hours; most of it is the p.10 bootstrap)
-    python main.py --quick    # fewer bootstrap repetitions, no p.10 bootstrap (about 10 minutes)
+    python main.py            # full run (about 2.5 hours; nearly all of it is the p.10 bootstrap)
+    python main.py --quick    # fewer bootstrap repetitions, no p.10 bootstrap (about 4 minutes)
     python main.py --steps 1 2
 
 Steps follow the report: 1 회피 확인 (p.3-5) -> 2 회피 요인 (p.6-7) -> 3 회피 효과 평가

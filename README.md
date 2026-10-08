@@ -44,8 +44,8 @@ p.7의 SHAP 분석은 이범석의 노트북(`SHAP_.ipynb`) 최종 모형을 옮
 5. 실행:
 
 ```bash
-python main.py            # 전체 실행 (대부분 p.10 부트스트랩에 쓰는 시간)
-python main.py --quick    # 부트스트랩 반복 수 축소, p.10 부트스트랩 생략
+python main.py            # 전체 실행 (약 2.5시간, 대부분 p.10 부트스트랩)
+python main.py --quick    # 약 4분: 부트스트랩 반복 수 축소, p.10 부트스트랩 생략
 python main.py --steps 1 2
 ```
 
