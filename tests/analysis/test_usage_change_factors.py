@@ -30,10 +30,24 @@ def test_rematch_is_the_next_pa_against_the_same_batter_within_the_season():
     assert np.isclose(row["post_usage"], 0.5) and np.isclose(row["usage_change"], 0.5 - 0.3)
 
 
-def test_an_event_whose_rematch_has_no_typed_pitch_is_left_out():
+def test_an_event_whose_next_pa_has_no_typed_pitch_is_dropped_not_moved_to_a_later_pa():
     pitches = _pitches()
-    pitches.loc[pitches["game_pk"] == 2, "pitch_type"] = None
+    pitches.loc[pitches["game_pk"] == 2, "pitch_type"] = None  # e.g. an intentional walk
+    later = pitches[pitches["game_pk"] == 2].assign(game_pk=4, game_date=pd.Timestamp("2021-04-15"), pitch_type="SL")
+    assert build_same_season_rematch_events(pd.concat([pitches, later], ignore_index=True), _usage()).empty
+
+
+def test_a_pa_finished_by_another_pitcher_is_not_the_first_pitchers_rematch():
+    pitches = _pitches()
+    pitches.loc[(pitches["game_pk"] == 2) & (pitches["pitch_number"] == 2), "pitcher"] = 99  # relieved mid-PA
     assert build_same_season_rematch_events(pitches, _usage()).empty
+
+
+def test_post_usage_counts_every_typed_pitch_of_the_next_pa():
+    pitches = _pitches()
+    extra = pitches[(pitches["game_pk"] == 2) & (pitches["pitch_number"] == 1)].assign(pitch_number=0, pitcher=99, pitch_type="CH")
+    events = build_same_season_rematch_events(pd.concat([pitches, extra], ignore_index=True), _usage())
+    assert len(events) == 1 and events.loc[0, "total_post_pitches"] == 3 and np.isclose(events.loc[0, "post_usage"], 1 / 3)
 
 
 def _events():
@@ -66,3 +80,12 @@ def test_design_matrix_drops_rows_with_a_missing_input():
     events.loc[0, "launch_speed"] = np.nan
     X, y = build_design_matrix(events)
     assert len(X) == 2 and len(y) == 2
+
+
+def test_events_come_out_in_a_fixed_order_whatever_the_input_order():
+    pitches = _pitches()
+    second = pitches[pitches["season"] == 2021].assign(batter=3)  # a second matchup with a lower batter id
+    second["at_bat_number"] += 100
+    both = pd.concat([pitches, second], ignore_index=True)
+    events = build_same_season_rematch_events(both.sample(frac=1, random_state=0), _usage())
+    assert events["batter"].tolist() == [3, 7]

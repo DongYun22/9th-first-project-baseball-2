@@ -37,31 +37,38 @@ PA_ORDER = ["season", "pitcher", "batter", "game_date", "game_pk", "at_bat_numbe
 def build_same_season_rematch_events(pitches: pd.DataFrame, season_usage: pd.DataFrame) -> pd.DataFrame:
     """XBH pitches whose pitcher faces the same batter again later that season,
     with the hit type's share in that next PA (`post_usage`), its season usage
-    (`baseline_usage`) and their difference (`usage_change`). Events whose
-    next PA has no typed pitch, or whose hit type is unknown, are left out.
+    (`baseline_usage`) and their difference (`usage_change`).
+
+    A PA belongs to the pitcher and batter of its last pitch, so a PA another
+    pitcher finished is not the first pitcher's rematch. `post_usage` is taken
+    over every typed pitch of the next PA. An event whose next PA has no typed
+    pitch (e.g. an intentional walk), or whose hit type is unknown, is dropped.
     """
-    pas = pitches[PA_ORDER].drop_duplicates().sort_values(PA_ORDER)
+    pa_keys = ["game_pk", "at_bat_number"]
+    pas = pitches.sort_values("pitch_number").groupby(pa_keys).agg(
+        pitcher=("pitcher", "last"), batter=("batter", "last"), season=("season", "first"), game_date=("game_date", "first")
+    ).reset_index().sort_values(PA_ORDER)
     matchup = pas.groupby(["season", "pitcher", "batter"])
     pas["next_game_pk"] = matchup["game_pk"].shift(-1)
     pas["next_at_bat_number"] = matchup["at_bat_number"].shift(-1)
     xbh = pitches[pitches["events"].isin(XBH_EVENTS) & pitches["pitch_type"].notna()]
-    events = xbh.merge(pas[["game_pk", "at_bat_number", "pitcher", "batter", "next_game_pk", "next_at_bat_number"]],
-                       on=["game_pk", "at_bat_number", "pitcher", "batter"])
+    events = xbh.merge(pas[[*pa_keys, "pitcher", "batter", "next_game_pk", "next_at_bat_number"]],
+                       on=[*pa_keys, "pitcher", "batter"])
     events = events[events["next_game_pk"].notna()]
 
     typed = pitches[pitches["pitch_type"].notna()]
-    pa_keys = ["game_pk", "at_bat_number", "pitcher"]
     total = typed.groupby(pa_keys).size().rename("total_post_pitches").reset_index()
     by_type = typed.groupby([*pa_keys, "pitch_type"]).size().rename("post_x_count").reset_index()
     rename = {"game_pk": "next_game_pk", "at_bat_number": "next_at_bat_number"}
-    events = events.merge(total.rename(columns=rename), on=["next_game_pk", "next_at_bat_number", "pitcher"], how="inner")
-    events = events.merge(by_type.rename(columns=rename), on=["next_game_pk", "next_at_bat_number", "pitcher", "pitch_type"],
-                          how="left")
+    next_keys = ["next_game_pk", "next_at_bat_number"]
+    events = events.merge(total.rename(columns=rename), on=next_keys, how="inner")
+    events = events.merge(by_type.rename(columns=rename), on=[*next_keys, "pitch_type"], how="left")
     events["post_usage"] = events["post_x_count"].fillna(0) / events["total_post_pitches"]
     usage = season_usage.rename(columns={"season_usage_rate": "baseline_usage"})
     events = events.merge(usage[["pitcher", "season", "pitch_type", "baseline_usage"]], on=["pitcher", "season", "pitch_type"])
     events[TARGET] = events["post_usage"] - events["baseline_usage"]
-    return events.reset_index(drop=True)
+    # a fixed order, because the model's random train/test split depends on row order
+    return events.sort_values(PA_ORDER).reset_index(drop=True)
 
 
 def build_design_matrix(events: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
